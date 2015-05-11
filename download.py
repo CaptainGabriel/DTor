@@ -15,7 +15,7 @@ leechers = None
 #support link
 link = 'https://kickass.to/usearch/'
 #main link
-actualLink = None
+actual_link = None
 #query to get them in descending order
 query = '/?field=seeders&sorder=desc'
 
@@ -24,11 +24,11 @@ def entry_point(args):
     Make the request
     '''
     if len(args) > 1:
-    global actualLink
-    actualLink = link + '%20'.join(args[1:]) + query
+        global actual_link
+        actual_link = link + '%20'.join(args[1:]) + query
     else:
         sys.exit('invalid number of arguments -> usage: dtor <tags>')
-    result = requests.get(actualLink)
+    result = requests.get(actual_link)
     #check response
     try:
         result.raise_for_status()
@@ -51,17 +51,17 @@ def format_seeders(text):
 def format_leechers(text):
     return green(text) if num(text) > 20 else red(text)
 
-def new_search(contentFromSearch):
+def new_search(content):
     #We need to get data in the following format:
     #   TorrentName - Size - Age - Seed - Leech
     global al
-    al = [tag.get_text() for tag in contentFromSearch.find_all('td', {'class':'center'})]
+    al = [tag.get_text() for tag in content.find_all('td',{'class':'center'})]
     global href
-    href = [tag_a.get('href') for tag_a in contentFromSearch.find_all('a', {'title':'Download torrent file'})]
+    href = [tag_a.get('href') for tag_a in content.find_all('a',{'title':'Download torrent file'})]
     global size
-    size = [tag_td.get_text() for tag_td in contentFromSearch.find_all('td', {'class':'nobr'}) ]
+    size = [tag_td.get_text() for tag_td in content.find_all('td',{'class':'nobr'}) ]
     global title
-    title = [tag_a.get_text() for tag_a in contentFromSearch.find_all('a', {'class':'cellMainLink'})]
+    title = [tag_a.get_text() for tag_a in content.find_all('a',{'class':'cellMainLink'})]
     global age
     age = al[2::5]
     global seeders
@@ -69,13 +69,13 @@ def new_search(contentFromSearch):
     global leechers
     leechers = al[4::5]
     #creating table with data
-    table = PrettyTable(['ID', 'Torrent_Name', 'Size', 'Age', 'Seeds', 'Leechers'])
-    for idx in range(10 if len(title) > 10 else len(title)):
-    	rowTitle = format_title(title[idx])
-    	rowSeeder = format_seeders(seeders[idx])
-    	rowLeecher = format_leechers(leechers[idx])
+    table = PrettyTable(['ID', 'Torrent_Name', 'Size', 'Age', 'Seeds','Leechers'])
+    for idx in range(15 if len(title) > 15 else len(title)):
+        rowTitle = format_title(title[idx])
+        rowSeeder = format_seeders(seeders[idx])
+        rowLeecher = format_leechers(leechers[idx])
         table.add_row([str(idx+1), rowTitle, size[idx], age[idx], rowSeeder, rowLeecher])
-	return table
+    return table
 
 def download_torr(cmdParts):
     torrFile = requests.get(href[int(cmdParts[1])])
@@ -83,7 +83,7 @@ def download_torr(cmdParts):
         torrFile.raise_for_status()
     except Exception:
         print('Download was not completed..')
-    actualTorrentFile = open(title[int(cmdParts[1])]+'.torrent', 'wb')
+    actualTorrentFile = open(title[int(cmdParts[1])] + '.torrent', 'wb')
     for chunk in torrFile.iter_content(100000):
         actualTorrentFile.write(chunk)
 
@@ -91,7 +91,7 @@ def open_web_page():
     '''
     open the webpage that shows the entire search
     '''
-    webbrowser.open(actualLink)
+    webbrowser.open(actual_link)
 
 def list_all_cmd():
     '''
@@ -103,26 +103,26 @@ def list_all_cmd():
     print('--exit          -> Exit application.')	
     print('--help          -> List all commands.')
 
-def cmd(_cmd):
+def cmd(cmd):
     '''
     Simple choice according to the received command
     '''
-    if _cmd == '--help':
+    if cmd == '--help':
         list_all_cmd()
-    elif '--download' in _cmd:
-        download_torr(_cmd.split(' '))
-    elif _cmd == '--webpage':
+    elif '--download' in cmd:
+        download_torr(cmd.split(' '))
+    elif cmd == '--webpage':
         open_web_page()
-    elif '--search' in _cmd:
-        print(new_search(entry_point(_cmd.split(' '))))
-    elif _cmd == '--exit':
+    elif '--search' in cmd:
+        print(new_search(entry_point(cmd.split(' '))))
+    elif cmd == '--exit':
         global wantsToExit
         wantsToExit=True
     else:
-        print("Comando Inválido !")
+        print("Invalid Command !")
 
 #script part
 wantsToExit = False
-print(new_search(entry_point(sys.argv)))
+print(new_search(entry_point(sys.argv))
 while wantsToExit is not True:
     cmd(input('>> '))
