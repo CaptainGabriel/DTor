@@ -2,9 +2,9 @@
 *Python Script to download torrents from Kickass Torrents website.*
 
 ##How to Execute:
-_download.py <tags>_
+dtor
 
-*write --help for a list of available commands*
+*write --list for a list of available commands*
 
 ##Example of Output:
 !["output"](http://i.imgur.com/tfJDTct.png)
