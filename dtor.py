@@ -1,5 +1,5 @@
 import requests, sys, bs4
-import webbrowser
+import webbrowser, argparse, collections
 from colors import red, green
 from prettytable import PrettyTable
 
@@ -23,9 +23,10 @@ def entry_point(args):
     '''
     Make the request
     '''
-    if len(args) > 1:
+    if len(args) > 0:
         global actual_link
-        actual_link = link + '%20'.join(args[1:]) + query
+        actual_link = link + '%20'.join(args) + query
+        print(actual_link)
     else:
         sys.exit('invalid number of arguments -> usage: dtor <tags>')
     result = requests.get(actual_link)
@@ -43,7 +44,7 @@ def num(s):
         return float(s)
 
 def format_title(text):
-    return text[0:35]+'...' if len(text) > 35 else text
+    return text[0:25]+'...' if len(text) > 25 else text
 
 def format_seeders(text):
     return green(text) if num(text) > 50 else red(text)
@@ -89,40 +90,55 @@ def download_torr(cmdParts):
 
 def open_web_page():
     '''
-    open the webpage that shows the entire search
+    Open the webpage that shows the entire search
+    Associated with the command "--webpage".
     '''
-    webbrowser.open(actual_link)
+    if actual_link is None:
+        print('Search for something first.')
+    else:
+        webbrowser.open(actual_link)
 
-def list_all_cmd():
+def list_all_cmds():
     '''
     Shows all options.
     '''
-    print('--search {tags} -> New search with specified tags.')
+    print('--search {tags 1..+} -> New search with specified tags.')
     print('--download [id] -> List all commands.')
     print('--webpage       -> Open the webpage with the entire results.')
-    print('--exit          -> Exit application.')	
-    print('--help          -> List all commands.')
+    print('--exit          -> Exit application.')
+    print('--list          -> List all commands.')
+    
 
-def cmd(cmd):
+def register_cmds():
     '''
-    Simple choice according to the received command
+    Register of all cmds
     '''
-    if cmd == '--help':
-        list_all_cmd()
-    elif '--download' in cmd:
-        download_torr(cmd.split(' '))
-    elif cmd == '--webpage':
-        open_web_page()
-    elif '--search' in cmd:
-        print(new_search(entry_point(cmd.split(' '))))
-    elif cmd == '--exit':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--list', '-l', action ='store_true', help='List all supported commands.')
+    parser.add_argument('--exit', '-e', action ='store_true', help='Asks to shut down the applications.')
+    parser.add_argument('--search', '-s', nargs = '+', help='Starts a new search with given keywords.')
+    parser.add_argument('--webpage','-webp', action = 'store_true', help = 'Open the webpage with the entire results.')
+    return parser
+    
+def cmd(cmd_line, parser):
+    '''
+    Interpreter of all cmds
+    '''
+    args = parser.parse_args(cmd_line.split())
+    if args.list:
+        list_all_cmds()
+    elif args.exit:
         global wantsToExit
-        wantsToExit=True
-    else:
-        print("Invalid Command !")
-
+        wantsToExit = True
+    elif args.search and len(args.search) > 0:
+        argss = ' '.join(args.search)
+        print(new_search(entry_point((argss).split(' '))))
+    elif args.webpage:
+        open_web_page()
+    
 #script part
 wantsToExit = False
-print(new_search(entry_point(sys.argv))
-while wantsToExit is not True:
-    cmd(input('>> '))
+parser = register_cmds()
+while (wantsToExit is not True):
+    cmd(input('>> '), parser)
+print("bye bye! ")
