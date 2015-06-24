@@ -1,3 +1,18 @@
+class Torrent:
+    def __init__(self, id, name, size, age, seeds, leechers):
+        self.id = id
+        self.name = name
+        self.size = size
+        self.age = age
+        self.seeds = seeds
+        self.leechers = leechers
+
+    def __str__(self):
+        return self.id + " - " + self.name + " - " + self.size + " - " + self.age + " - " + self.seeds + " - " + self.leechers
+
+
+
+
 import requests, sys, bs4
 import webbrowser, argparse, collections
 from colors import red, green
@@ -12,12 +27,17 @@ age = None
 seeders = None
 leechers = None
 
+#dict of objects
+torrents_found = {}
+
 #support link
 link = 'https://kickass.to/usearch/'
 #main link
 actual_link = None
 #query to get them in descending order
 query = '/?field=seeders&sorder=desc'
+
+
 
 def entry_point(args):
     '''
@@ -75,7 +95,14 @@ def new_search(content):
         rowTitle = format_title(title[idx])
         rowSeeder = format_seeders(seeders[idx])
         rowLeecher = format_leechers(leechers[idx])
-        table.add_row([str(idx+1), rowTitle, size[idx], age[idx], rowSeeder, rowLeecher])
+        age = age[idx]
+        size = size[idx]
+        id = str(idx+1)
+        table.add_row([id, rowTitle, size, age, rowSeeder, rowLeecher])
+        #the creation
+        torr = Torrent(id, title[idx] , size, age, rowSeeder, rowLeecher)
+        #into dict
+        torrents_found[idx] = torr
     return table
 
 def download_torr(cmdParts):
@@ -107,6 +134,7 @@ def list_all_cmds():
     print('--webpage       -> Open the webpage with the entire results.')
     print('--exit          -> Exit application.')
     print('--list          -> List all commands.')
+    print('--id [id]       -> More info about a specific torrent.')
     
 
 def register_cmds():
@@ -118,6 +146,7 @@ def register_cmds():
     parser.add_argument('--exit', '-e', action ='store_true', help='Asks to shut down the applications.')
     parser.add_argument('--search', '-s', nargs = '+', help='Starts a new search with given keywords.')
     parser.add_argument('--webpage','-webp', action = 'store_true', help = 'Open the webpage with the entire results.')
+    parser.add_argument('--id', nargs = 1, help = 'More information about a given torrent ID.')
     return parser
     
 def cmd(cmd_line, parser):
@@ -135,6 +164,9 @@ def cmd(cmd_line, parser):
         print(new_search(entry_point((argss).split(' '))))
     elif args.webpage:
         open_web_page()
+    elif args.id and len(args.id) == 1:
+        print(torrents_found[num(args.id[0])-1])
+        
     
 #script part
 wantsToExit = False
