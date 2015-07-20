@@ -3,6 +3,7 @@ import webbrowser, argparse, collections, threading
 from colors import red, green
 from prettytable import PrettyTable
 
+
 #global vars
 al = None
 href = None
@@ -57,32 +58,20 @@ class AsyncDownload(threading.Thread):
         actualTorrentFile = open(title[self.id_of_torrent] + '.torrent', 'wb')
         for chunk in torrFile.iter_content(100000):
             actualTorrentFile.write(chunk)
-        print("Download Completed !")
-
-
-def entry_point(args):
-    '''
-    Make the request
-    '''
-    if len(args) > 0:
-        global actual_link
-        actual_link = link + '%20'.join(args) + query
-        print(actual_link)
-    else:
-        sys.exit('invalid number of arguments -> usage: dtor <tags>')
-    result = requests.get(actual_link)
-    #check response
-    try:
-        result.raise_for_status()
-    except Exception as exc:
-        sys.exit('invalid request. ' + str(exc))
-    return 	bs4.BeautifulSoup(result.text)
+        #balloon_tip("DTor","Download Completed !")
 
 def num(s):
     try:
         return int(s)
     except ValueError:
         return float(s)
+
+def parse_link(words):
+    global actual_link
+    if len(words) > 0: #should be 'if len(words):'
+        actual_link = link + '%20'.join(words) + query
+    else:
+        actual_link = link + words + query
 
 def format_title(text):
     return text[0:25]+'...' if len(text) > 25 else text
@@ -93,14 +82,31 @@ def format_seeders(text):
 def format_leechers(text):
     return green(text) if num(text) > 20 else red(text)
 
-def new_search(content):
+def make_http_request(args=None):
     '''
-    Performs a new search with given tags.
+    Make the request
+    '''
+    if args is not None: #Should be 'if args:'
+        parse_link(args)
+    result = requests.get(actual_link)
+    try:
+        result.raise_for_status()
+    except Exception as exc:
+        sys.exit('Invalid Request. ' + str(exc))
+        return #need to test the consequences of this return
+    #ugly fix but hey, it is what it is
+    return 	bs4.BeautifulSoup((result.text).encode('cp850','replace'))
+
+def parse_search_results(content):
+    '''
+    Given html content, performs a kind of parsing in order to
+    retrive the important content.
     Builds objects with following info:
         TorrentName - Size - Age - Seed - Leech
     Associated with the command "--search"
     '''
     global al
+
     al = [tag.get_text() for tag in content.find_all('td',{'class':'center'})]
     global href
     href = [tag_a.get('href') for tag_a in content.find_all('a',{'title':'Download torrent file'})]
@@ -116,44 +122,40 @@ def new_search(content):
     leechers = al[4::5]
     #creating table with data
     table = PrettyTable(['ID', 'Torrent_Name', 'Size', 'Age', 'Seeds','Leechers'])
-    for idx in range(15 if len(title) > 15 else len(title)):
+    for idx in range(25 if len(title) == 25 else len(title)):
         rowTitle = format_title(title[idx])
         rowSeeder = format_seeders(seeders[idx])
         rowLeecher = format_leechers(leechers[idx])
-        age = age[idx]
-        size = size[idx]
+        ageValue = age[idx]
+        sizeValue = size[idx]
         id = str(idx+1)
-        table.add_row([id, rowTitle, size, age, rowSeeder, rowLeecher])
+        table.add_row([id, rowTitle, sizeValue, ageValue, rowSeeder, rowLeecher])
         #if idx < 15:
         #the creation
-        torr = Torrent(id, title[idx] , size, age, rowSeeder, rowLeecher)
+        torr = Torrent(id, title[idx] , sizeValue, ageValue, rowSeeder, rowLeecher)
         #into dict
         torrents_found[idx] = torr
     return table
 
-'''
-DEPRECATED
-def download_torr(torr_id):
-    #torrFile = requests.get(href[int(cmdParts[1])])
-    try:
-        torrFile = requests.get(href[torr_id])
-        torrFile.raise_for_status()
-    except Exception:
-        print('Download could not be completed..')
-        return
-    actualTorrentFile = open(title[torr_id] + '.torrent', 'wb')
-    for chunk in torrFile.iter_content(100000):
-        actualTorrentFile.write(chunk)
-'''
 def open_web_page():
     '''
     Open the webpage that shows the entire search
     Associated with the command "--webpage".
     '''
-    if actual_link is None:
+    if actual_link is None: #should be 'if actual_link:'
         print('Search for something first.')
     else:
         webbrowser.open(actual_link)
+
+def turn_page(page_number):
+    global actual_link
+    if actual_link is not None: #should be 'if actual_link:'
+        #tem de ser feito com expressoes regex
+        actual_link = actual_link.replace("/?field", '/' + page_number + "/?field");
+        #print(actual_link)
+        print(parse_search_results(make_http_request()))
+    else:
+        print('Search for something first.')
 
 def list_all_cmds():
     '''
@@ -179,6 +181,7 @@ def register_cmds():
     parser.add_argument('--webpage','-webp', action = 'store_true', help = 'Open the webpage with the entire results.')
     parser.add_argument('--id', nargs = 1, help = 'More information about a given torrent ID.')
     parser.add_argument('--download', '-d', nargs = 1, help = 'Download the torrent file for the ID given.')
+    parser.add_argument('--page', '-p', nargs = 1, help = 'Turn the page')
     return parser
 
 def cmd(cmd_line, parser):
@@ -191,19 +194,19 @@ def cmd(cmd_line, parser):
     elif args.exit:
         global wantsToExit
         wantsToExit = True
-    elif args.search and len(args.search) > 0:
+    elif args.search and len(args.search) > 0: #should be 'if len(args.search):'
         argss = ' '.join(args.search)
-        print(new_search(entry_point((argss).split(' '))))
+        print(parse_search_results(make_http_request((argss).split(' '))))
     elif args.webpage:
         open_web_page()
     elif args.id and len(args.id) == 1:
         print(torrents_found[num(args.id[0])-1])
     elif args.download and len(args.download) == 1:
-        #download_torr(num(args.download[0]))
-        d = AsyncDownload(num(args.download[0]))
-        d.start()
+        AsyncDownload(num(args.download[0])).start()
+    elif args.page and len(args.page) == 1:
+        turn_page(args.page[0])
 
-#script part
+#script
 wantsToExit = False
 parser = register_cmds()
 while (wantsToExit is not True):

@@ -1,12 +1,31 @@
 #_DTor_
-*Python Script to download torrents from Kickass Torrents website.*
 
-##How to Execute:
-dtor
+~~~~
+NAME
+    DTor - Python Script to download torrents from Kickass Torrents website.
 
-*write --list for a list of available commands*
+SYNOPSIS
+    dtor 
+    command [arguments...]
 
-##Example of Output:
-!["output"](http://i.imgur.com/tfJDTct.png)
+COMMANDS
+    --search   {tags 1..+} -> New search with specified tags.
+    --download [id]        -> Download the torrent file for the ID given.
+    --webpage              -> Open the webpage with the entire results.
+    --exit                 -> Exit application.
+    --list                 -> List all commands.
+    --id       [id]        -> More info about a specific torrent.
+    help                   -> Shows a list of commands.
+~~~~
+
+## License
+
+The `Dtor` script is dedicated to the public domain.
+Use it as you please with no restrictions whatsoever.
+
+## Example
+
+[output_of_search](http://i.imgur.com/hJbBvYd.png)
+
 
 *inspired by [AssKick.py](http://pantuts.com/2014/09/20/asskick-py-python-script-search-download-torrents-kickass/)*
