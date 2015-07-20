@@ -25,7 +25,7 @@ Use it as you please with no restrictions whatsoever.
 
 ## Example
 
-[output_of_search](http://i.imgur.com/hJbBvYd.png)
+<img src="http://i.imgur.com/hJbBvYd.png" title="source: imgur.com" />
 
 
 *inspired by [AssKick.py](http://pantuts.com/2014/09/20/asskick-py-python-script-search-download-torrents-kickass/)*
