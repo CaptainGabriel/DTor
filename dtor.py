@@ -2,7 +2,7 @@ import requests, sys, bs4
 import webbrowser, argparse, collections, threading
 from colors import red, green
 from prettytable import PrettyTable
-
+import re
 
 #global vars
 al = None
@@ -12,6 +12,8 @@ title = None
 age = None
 seeders = None
 leechers = None
+
+html_space = '%20'
 
 #dict of objects
 torrents_found = {}
@@ -69,7 +71,7 @@ def num(s):
 def parse_link(words):
     global actual_link
     if len(words) > 0: #should be 'if len(words):'
-        actual_link = link + '%20'.join(words) + query
+        actual_link = link + html_space.join(words) + query
     else:
         actual_link = link + words + query
 
@@ -142,17 +144,21 @@ def open_web_page():
     Open the webpage that shows the entire search
     Associated with the command "--webpage".
     '''
-    if actual_link is None: #should be 'if actual_link:'
+    if actual_link is None:
         print('Search for something first.')
     else:
         webbrowser.open(actual_link)
 
 def turn_page(page_number):
     global actual_link
-    if actual_link is not None: #should be 'if actual_link:'
-        #tem de ser feito com expressoes regex
+    #if actual_link is not None: #should be 'if actual_link:'
+    if actual_link:
+        #pattern = re.compile('\/\d+\/')
+        #if pattern.search(actual_link):
+        #    actual_link = actual_link.replace('\/\d+\/', '/' + page_number + '/?field');
+        #else:
         actual_link = actual_link.replace("/?field", '/' + page_number + "/?field");
-        #print(actual_link)
+        print(actual_link)
         print(parse_search_results(make_http_request()))
     else:
         print('Search for something first.')
@@ -167,8 +173,8 @@ def list_all_cmds():
     print('--webpage       -> Open the webpage with the entire results.')
     print('--exit          -> Exit application.')
     print('--list          -> List all commands.')
-    print('--id [id]       -> More info about a specific torrent.')
-
+    print('--id       [id] -> More info about a specific torrent.')
+    print('--page     [n]  -> Turn the page in order to see more files')
 
 def register_cmds():
     '''
@@ -194,7 +200,7 @@ def cmd(cmd_line, parser):
     elif args.exit:
         global wantsToExit
         wantsToExit = True
-    elif args.search and len(args.search) > 0: #should be 'if len(args.search):'
+    elif args.search and len(args.search) > 0: 
         argss = ' '.join(args.search)
         print(parse_search_results(make_http_request((argss).split(' '))))
     elif args.webpage:
