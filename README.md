@@ -15,7 +15,7 @@ COMMANDS
     --exit                 -> Exit application.
     --list                 -> List all commands.
     --id       [id]        -> More info about a specific torrent.
-    help                   -> Shows a list of commands.
+    --help                   -> Shows a list of commands.
 ~~~~
 
 ## License
