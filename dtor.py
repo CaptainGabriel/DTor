@@ -192,7 +192,7 @@ def register_cmds():
 
 def cmd(cmd_line, parser):
     '''
-    Interpreter of all cmds
+    Interpreter of all cmds.
     '''
     args = parser.parse_args(cmd_line.split())
     if args.list:
