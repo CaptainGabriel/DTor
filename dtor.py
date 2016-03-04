@@ -19,7 +19,7 @@ html_space = '%20'
 torrents_found = {}
 
 #support link
-link = 'https://kat.cr/usearch/'
+link = 'https://kickass.unblocked.red/usearch/'
 #main link
 actual_link = None
 #query to get them in descending order
@@ -52,15 +52,27 @@ class AsyncDownload(threading.Thread):
 
     def run(self):
         try:
-            torrFile = requests.get(href[self.id_of_torrent])
-            torrFile.raise_for_status()
-        except Exception:
-            print('Download could not be completed..')
-            return
-        actualTorrentFile = open(title[self.id_of_torrent] + '.torrent', 'wb')
-        for chunk in torrFile.iter_content(100000):
-            actualTorrentFile.write(chunk)
-        #balloon_tip("DTor","Download Completed !")
+            print("Debug: " + href[self.id_of_torrent])
+            valid_tor_url = self.transform_into_valid_url(href[self.id_of_torrent])
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2049.0 Safari/537.36"}
+            torr_file = requests.get(valid_tor_url, headers)
+            torr_file.raise_for_status()
+        except Exception as e:
+        	print(e)
+        	return
+        actual_torrent_file = open(title[self.id_of_torrent] + '.torrent', 'wb')
+        for chunk in torr_file.iter_content(100000):
+            actual_torrent_file.write(chunk)
+
+    def transform_into_valid_url(self, url):
+    	'''
+    	The url might be from torcache or some other service.
+    	The problem is it needs to start with a valid scheme
+    	such as 'http//'.
+    	'''
+    	return "http://" + url[2:] 
+
+
 
 def num(s):
     try:
@@ -70,7 +82,7 @@ def num(s):
 
 def parse_link(words):
     global actual_link
-    if len(words) > 0: #should be 'if len(words):'
+    if len(words):
         actual_link = link + html_space.join(words) + query
     else:
         actual_link = link + words + query
@@ -88,7 +100,7 @@ def make_http_request(args=None):
     '''
     Make the request
     '''
-    if args is not None: #Should be 'if args:'
+    if args:
         parse_link(args)
     result = requests.get(actual_link)
     try:
@@ -96,8 +108,7 @@ def make_http_request(args=None):
     except Exception as exc:
         sys.exit('Invalid Request. ' + str(exc))
         return #need to test the consequences of this return
-    #ugly fix but hey, it is what it is
-    return 	bs4.BeautifulSoup((result.text).encode('cp850','replace'))
+    return 	bs4.BeautifulSoup((result.text).encode('cp850','replace'), "html.parser")
 
 def parse_search_results(content):
     '''
@@ -151,7 +162,6 @@ def open_web_page():
 
 def turn_page(page_number):
     global actual_link
-    #if actual_link is not None: #should be 'if actual_link:'
     if actual_link:
         #pattern = re.compile('\/\d+\/')
         #if pattern.search(actual_link):
